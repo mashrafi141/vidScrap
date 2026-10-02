@@ -1,0 +1,51 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Prepare Release Artifacts
+        run: |
+          mkdir -p release-artifacts
+          VERSION_TAG="${GITHUB_REF_NAME}"
+          cp app/build/outputs/apk/release/*.apk release-artifacts/XHamsterLibrary-${VERSION_TAG}-release.apk
+          cd release-artifacts
+          sha256sum XHamsterLibrary-${VERSION_TAG}-release.apk > SHA256SUMS.txt
+          cd ..
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            release-artifacts/XHamsterLibrary-${GITHUB_REF_NAME}-release.apk \
+            release-artifacts/SHA256SUMS.txt \
+            --title "XHamster Library ${GITHUB_REF_NAME}" \
+            --generate-notes
