@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Video Library"
+rootProject.name = "Proxo-Qlyps"
 
 include(":app")

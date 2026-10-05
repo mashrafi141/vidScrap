@@ -17,6 +17,7 @@ import com.example.data.preferences.AppPreferences
 import com.example.data.remote.scraper.ScraperEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -170,6 +171,7 @@ class LibraryRepository(
                 sourceDao.updateSource(
                     entity.copy(
                         name = resolvedName,
+                        avatarUrl = entity.avatarUrl ?: result.avatarUrl,
                         syncStatus = SyncStatus.SUCCESS.name,
                         lastCheckedAt = System.currentTimeMillis(),
                         lastSuccessfulSyncAt = System.currentTimeMillis(),
@@ -183,7 +185,8 @@ class LibraryRepository(
                     sourceName = resolvedName,
                     videos = result.videos,
                     newVideosCount = newCount,
-                    updatedVideosCount = updatedCount
+                    updatedVideosCount = updatedCount,
+                    avatarUrl = result.avatarUrl
                 )
             }
             is ScrapeResult.Error -> {
@@ -241,5 +244,13 @@ class LibraryRepository(
     suspend fun clearAllData() = withContext(Dispatchers.IO) {
         videoDao.deleteAllVideos()
         sourceDao.deleteAllSources()
+    }
+
+    suspend fun updateProfileDetails(sourceId: Long, name: String?, customAvatarUri: String?) = withContext(Dispatchers.IO) {
+        sourceDao.updateProfileDetails(sourceId, name, customAvatarUri)
+    }
+
+    suspend fun getFirstVideoThumbnailForSource(sourceId: Long): String? = withContext(Dispatchers.IO) {
+        videoDao.getVideosForSource(sourceId).first().firstOrNull()?.thumbnailUrl
     }
 }

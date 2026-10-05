@@ -50,6 +50,12 @@ interface SourceDao {
     @Query("DELETE FROM sources")
     suspend fun deleteAllSources()
 
+    @Query("UPDATE sources SET name = :name, customAvatarUri = :customAvatarUri, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun updateProfileDetails(id: Long, name: String?, customAvatarUri: String?, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE sources SET avatarUrl = :avatarUrl, updatedAt = :updatedAt WHERE id = :id AND (avatarUrl IS NULL OR avatarUrl = '')")
+    suspend fun updateAvatarUrlIfEmpty(id: Long, avatarUrl: String, updatedAt: Long = System.currentTimeMillis())
+
     @Query("""
         UPDATE sources 
         SET syncStatus = :status, 

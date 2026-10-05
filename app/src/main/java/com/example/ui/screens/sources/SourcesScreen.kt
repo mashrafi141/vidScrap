@@ -60,8 +60,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core.model.Source
 import com.example.core.model.SourceType
 import com.example.core.util.TimeFormatter
+import com.example.ui.components.EditProfileDialog
 import com.example.ui.components.EmptyLibraryState
 import com.example.ui.components.GlassCard
+import com.example.ui.components.ProfileCard
 import com.example.ui.components.SyncStatusBadge
 import com.example.ui.components.XHamsterLoginDialog
 import com.example.ui.theme.AccentError
@@ -86,6 +88,7 @@ fun SourcesScreen(
     val syncingSourceId by viewModel.syncingSourceId.collectAsStateWithLifecycle()
     val statusMessage by viewModel.statusMessage.collectAsStateWithLifecycle()
     var showLoginDialog by remember { mutableStateOf(false) }
+    var editingProfile by remember { mutableStateOf<Source?>(null) }
 
     Box(
         modifier = modifier
@@ -235,27 +238,46 @@ fun SourcesScreen(
                         }
                     }
                 }
-            } else {
-                // Playlists or Profiles collections
+            } else if (selectedTab == SourceType.PROFILE) {
+                // Profile collections in a 2-column box grid with custom DP and long press to edit
                 if (sources.isEmpty()) {
-                    val (emptyTitle, emptyDesc, emptyIcon) = when (selectedTab) {
-                        SourceType.PLAYLIST -> Triple(
-                            "No playlists imported",
-                            "Import a TXT file containing #playlist links to add playlist sources.",
-                            Icons.Outlined.QueueMusic
-                        )
-                        SourceType.PROFILE -> Triple(
-                            "No profiles imported",
-                            "Import a TXT file containing #profile link entries to track channel uploads.",
-                            Icons.Outlined.Person
-                        )
-                        else -> Triple("", "", Icons.Outlined.VideoLibrary)
-                    }
-
                     EmptyLibraryState(
-                        title = emptyTitle,
-                        description = emptyDesc,
-                        icon = emptyIcon,
+                        title = "No profiles imported",
+                        description = "Import a TXT file containing #profile link entries to track channel uploads.",
+                        icon = Icons.Outlined.Person,
+                        onImportClick = onNavigateToHome,
+                        buttonText = "Go to Import",
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        contentPadding = PaddingValues(
+                            top = 10.dp,
+                            bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 80.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(items = sources, key = { it.id }) { profile ->
+                            ProfileCard(
+                                source = profile,
+                                onClick = { onSourceClick(profile.id) },
+                                onLongClick = { editingProfile = profile }
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Playlists collections
+                if (sources.isEmpty()) {
+                    EmptyLibraryState(
+                        title = "No playlists imported",
+                        description = "Import a TXT file containing #playlist links to add playlist sources.",
+                        icon = Icons.Outlined.QueueMusic,
                         onImportClick = onNavigateToHome,
                         buttonText = "Go to Import",
                         modifier = Modifier.weight(1f)
@@ -283,6 +305,17 @@ fun SourcesScreen(
                     }
                 }
             }
+        }
+
+        editingProfile?.let { profile ->
+            EditProfileDialog(
+                source = profile,
+                onDismiss = { editingProfile = null },
+                onSave = { newName, newAvatarUri ->
+                    viewModel.updateProfileDetails(profile.id, newName, newAvatarUri)
+                    editingProfile = null
+                }
+            )
         }
 
         if (showLoginDialog) {

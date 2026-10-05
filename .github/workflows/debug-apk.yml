@@ -22,16 +22,23 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Prepare Keystore & Gradle Wrapper
+        run: |
+          chmod +x ./gradlew
+          if [ -f "debug.keystore.base64" ] && [ ! -f "debug.keystore" ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          fi
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
       - name: Rename APK for artifact
         run: |
           mkdir -p build-artifacts
-          cp app/build/outputs/apk/debug/*.apk build-artifacts/XHamsterLibrary-debug.apk
+          cp app/build/outputs/apk/debug/*.apk build-artifacts/ProxoQlyps-debug.apk
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: xhamster-library-debug-apk
-          path: build-artifacts/XHamsterLibrary-debug.apk
+          name: proxo-qlyps-debug-apk
+          path: build-artifacts/ProxoQlyps-debug.apk

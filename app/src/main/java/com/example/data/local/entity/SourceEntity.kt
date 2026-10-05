@@ -23,6 +23,8 @@ data class SourceEntity(
     val lastError: String? = null,
     val videoCount: Int = 0,
     val syncStatus: String = SyncStatus.IDLE.name,
+    val avatarUrl: String? = null,
+    val customAvatarUri: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -38,6 +40,8 @@ data class SourceEntity(
             lastError = lastError,
             videoCount = videoCount,
             syncStatus = runCatching { SyncStatus.valueOf(syncStatus) }.getOrDefault(SyncStatus.IDLE),
+            avatarUrl = avatarUrl,
+            customAvatarUri = customAvatarUri,
             createdAt = createdAt,
             updatedAt = updatedAt
         )
@@ -56,6 +60,8 @@ data class SourceEntity(
                 lastError = source.lastError,
                 videoCount = source.videoCount,
                 syncStatus = source.syncStatus.name,
+                avatarUrl = source.avatarUrl,
+                customAvatarUri = source.customAvatarUri,
                 createdAt = source.createdAt,
                 updatedAt = source.updatedAt
             )

@@ -22,7 +22,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.OpenInNew
@@ -178,22 +183,43 @@ fun SourceVideosScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(DarkSurfaceVariant, RoundedCornerShape(10.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = when (currentSource.type) {
-                                            SourceType.PLAYLIST -> Icons.Outlined.QueueMusic
-                                            SourceType.SINGLE_VIDEO -> Icons.Outlined.VideoLibrary
-                                            SourceType.PROFILE -> Icons.Outlined.Person
-                                        },
-                                        contentDescription = null,
-                                        tint = AccentPrimary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                val headerAvatar = currentSource.customAvatarUri ?: currentSource.avatarUrl
+                                if (currentSource.type == SourceType.PROFILE && !headerAvatar.isNullOrBlank()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(CircleShape)
+                                            .background(DarkSurfaceVariant),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(context)
+                                                .data(headerAvatar)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = currentSource.name,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .background(DarkSurfaceVariant, RoundedCornerShape(10.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = when (currentSource.type) {
+                                                SourceType.PLAYLIST -> Icons.Outlined.QueueMusic
+                                                SourceType.SINGLE_VIDEO -> Icons.Outlined.VideoLibrary
+                                                SourceType.PROFILE -> Icons.Outlined.Person
+                                            },
+                                            contentDescription = null,
+                                            tint = AccentPrimary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.width(10.dp))

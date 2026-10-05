@@ -14,7 +14,7 @@ import com.example.data.local.entity.VideoEntity
         VideoEntity::class,
         SourceVideoCrossRef::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

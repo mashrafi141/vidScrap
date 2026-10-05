@@ -5,7 +5,8 @@ sealed class ScrapeResult {
         val sourceName: String? = null,
         val videos: List<Video>,
         val newVideosCount: Int = 0,
-        val updatedVideosCount: Int = 0
+        val updatedVideosCount: Int = 0,
+        val avatarUrl: String? = null
     ) : ScrapeResult()
 
     data class Error(

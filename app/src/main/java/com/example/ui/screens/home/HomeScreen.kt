@@ -45,6 +45,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,9 +59,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core.model.Source
 import com.example.core.model.SourceType
 import com.example.core.model.Video
+import com.example.ui.components.EditProfileDialog
 import com.example.ui.components.EmptyLibraryState
 import com.example.ui.components.ErrorBanner
 import com.example.ui.components.GlassCard
+import com.example.ui.components.ProfileCard
 import com.example.ui.components.VideoCard
 import com.example.ui.screens.importtxt.ImportTxtDialog
 import com.example.ui.theme.AccentPrimary
@@ -90,6 +95,7 @@ fun HomeScreen(
     val sortOrder by viewModel.sortOrder.collectAsStateWithLifecycle()
     val categoryFilter by viewModel.categoryFilter.collectAsStateWithLifecycle()
     val showImportDialog by viewModel.showImportDialog.collectAsStateWithLifecycle()
+    var editingProfile by remember { mutableStateOf<Source?>(null) }
 
     Box(
         modifier = modifier
@@ -326,7 +332,7 @@ fun HomeScreen(
                     }
 
                     HomeCategoryFilter.PROFILES -> {
-                        // Display Profiles list with tap to open
+                        // Display Profiles in a 2-column box grid with DP and long press to edit
                         if (profileSources.isEmpty()) {
                             EmptyLibraryState(
                                 title = "No profiles imported",
@@ -336,7 +342,8 @@ fun HomeScreen(
                                 modifier = Modifier.weight(1f)
                             )
                         } else {
-                            LazyColumn(
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(horizontal = 16.dp),
@@ -344,12 +351,14 @@ fun HomeScreen(
                                     top = 6.dp,
                                     bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 80.dp
                                 ),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                items(profileSources, key = { it.id }) { profile ->
-                                    HomeSourceCard(
+                                items(items = profileSources, key = { it.id }) { profile ->
+                                    ProfileCard(
                                         source = profile,
-                                        onClick = { onSourceClick(profile.id) }
+                                        onClick = { onSourceClick(profile.id) },
+                                        onLongClick = { editingProfile = profile }
                                     )
                                 }
                             }
@@ -442,6 +451,18 @@ fun HomeScreen(
                 onDismiss = { viewModel.closeImportDialog() },
                 onConfirmImport = { content, fileName ->
                     viewModel.importTxt(content, fileName)
+                }
+            )
+        }
+
+        // Edit Profile Dialog
+        editingProfile?.let { profile ->
+            EditProfileDialog(
+                source = profile,
+                onDismiss = { editingProfile = null },
+                onSave = { newName, newAvatarUri ->
+                    viewModel.updateProfileDetails(profile.id, newName, newAvatarUri)
+                    editingProfile = null
                 }
             )
         }

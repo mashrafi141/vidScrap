@@ -88,4 +88,10 @@ class SourcesViewModel(application: Application) : AndroidViewModel(application)
     fun clearStatusMessage() {
         _statusMessage.value = null
     }
+
+    fun updateProfileDetails(sourceId: Long, name: String, customAvatarUri: String?) {
+        viewModelScope.launch {
+            repository.updateProfileDetails(sourceId, name, customAvatarUri)
+        }
+    }
 }

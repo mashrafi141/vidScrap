@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -25,8 +26,15 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Prepare Keystore & Gradle Wrapper
+        run: |
+          chmod +x ./gradlew
+          if [ -f "debug.keystore.base64" ] && [ ! -f "debug.keystore" ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          fi
+
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew testDebugUnitTest --continue
 
       - name: Build Release APK
         run: ./gradlew assembleRelease
@@ -34,18 +42,23 @@ jobs:
       - name: Prepare Release Artifacts
         run: |
           mkdir -p release-artifacts
-          VERSION_TAG="${GITHUB_REF_NAME}"
-          cp app/build/outputs/apk/release/*.apk release-artifacts/XHamsterLibrary-${VERSION_TAG}-release.apk
+          VERSION_TAG="${GITHUB_REF_NAME:-v1.0.0}"
+          APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            APK_FILE=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          fi
+          cp "$APK_FILE" "release-artifacts/ProxoQlyps-${VERSION_TAG}.apk"
           cd release-artifacts
-          sha256sum XHamsterLibrary-${VERSION_TAG}-release.apk > SHA256SUMS.txt
+          sha256sum "ProxoQlyps-${VERSION_TAG}.apk" > SHA256SUMS.txt
           cd ..
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            release-artifacts/XHamsterLibrary-${GITHUB_REF_NAME}-release.apk \
+          VERSION_TAG="${GITHUB_REF_NAME:-v1.0.0}"
+          gh release create "${VERSION_TAG}" \
+            release-artifacts/ProxoQlyps-${VERSION_TAG}.apk \
             release-artifacts/SHA256SUMS.txt \
-            --title "XHamster Library ${GITHUB_REF_NAME}" \
-            --generate-notes
+            --title "Proxo-Qlyps ${VERSION_TAG}" \
+            --generate-notes || true

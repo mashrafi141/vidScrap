@@ -226,10 +226,20 @@ class ScraperEngine(
             }
         }
 
+        val avatarUrl = if (!isPlaylist) {
+            initialDoc.selectFirst("meta[property='og:image']")?.attr("content")?.takeIf { it.isNotBlank() }
+                ?: initialDoc.selectFirst("img.user-picture, img.avatar, img.creator-avatar, .creator-header img, [data-role='user-avatar'] img, .author-avatar img")?.let { img ->
+                    val src = img.attr("src").ifBlank { img.attr("data-src") }
+                    src.takeIf { it.isNotBlank() }
+                }
+                ?: allVideos.firstOrNull()?.thumbnailUrl
+        } else null
+
         ScrapeResult.Success(
             sourceName = resolvedName,
             videos = allVideos,
-            newVideosCount = allVideos.size
+            newVideosCount = allVideos.size,
+            avatarUrl = avatarUrl
         )
     }
 

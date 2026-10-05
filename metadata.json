@@ -1,5 +1,5 @@
 {
-  "name": "Video Library",
+  "name": "Proxo-Qlyps",
   "description": "Personal video library to import, cache, and manage your playlist, profile, and video sources with dark glassmorphism UI.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

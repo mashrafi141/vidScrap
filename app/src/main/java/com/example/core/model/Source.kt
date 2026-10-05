@@ -11,6 +11,8 @@ data class Source(
     val lastError: String? = null,
     val videoCount: Int = 0,
     val syncStatus: SyncStatus = SyncStatus.IDLE,
+    val avatarUrl: String? = null,
+    val customAvatarUri: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )
