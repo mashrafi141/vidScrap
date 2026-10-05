@@ -1,19 +1,26 @@
-name: CI
+name: CI & Release
 
 on:
   push:
     branches: [ main, develop ]
+    tags:
+      - "v*"
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build-and-test:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -47,5 +54,56 @@ jobs:
       - name: Run Unit Tests
         run: gradle testDebugUnitTest --continue
 
+      - name: Build Release APK
+        run: gradle assembleRelease
+
       - name: Build Debug APK
         run: gradle assembleDebug
+
+      - name: Prepare APK Artifacts
+        run: |
+          mkdir -p release-artifacts
+          
+          TAG="v1.0.${{ github.run_number }}"
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+          RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          DEBUG_APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+
+          if [ -f "$RELEASE_APK" ]; then
+            cp "$RELEASE_APK" "release-artifacts/ProxoQlyps-${TAG}-release.apk"
+          fi
+
+          if [ -f "$DEBUG_APK" ]; then
+            cp "$DEBUG_APK" "release-artifacts/ProxoQlyps-${TAG}-debug.apk"
+          fi
+
+          cd release-artifacts
+          sha256sum *.apk > SHA256SUMS.txt
+          cd ..
+          ls -la release-artifacts
+
+      - name: Upload APKs to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: proxo-qlyps-apks
+          path: release-artifacts/*
+
+      - name: Publish to GitHub Releases
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Publishing release: $RELEASE_TAG"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists. Uploading new assets..."
+            gh release upload "$RELEASE_TAG" release-artifacts/* --clobber
+          else
+            echo "Creating new GitHub Release $RELEASE_TAG..."
+            gh release create "$RELEASE_TAG" release-artifacts/* \
+              --title "Proxo-Qlyps $RELEASE_TAG" \
+              --generate-notes
+          fi
