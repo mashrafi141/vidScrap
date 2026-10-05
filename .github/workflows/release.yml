@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -56,6 +58,7 @@ jobs:
         run: |
           mkdir -p release-artifacts
           VERSION_TAG="${GITHUB_REF_NAME:-v1.0.0}"
+          echo "VERSION_TAG=$VERSION_TAG" >> $GITHUB_ENV
           APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
           if [ -z "$APK_FILE" ]; then
             APK_FILE=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
@@ -65,13 +68,21 @@ jobs:
           sha256sum "ProxoQlyps-${VERSION_TAG}.apk" > SHA256SUMS.txt
           cd ..
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: proxo-qlyps-release-apk
+          path: release-artifacts/*
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION_TAG="${GITHUB_REF_NAME:-v1.0.0}"
-          gh release create "${VERSION_TAG}" \
-            release-artifacts/ProxoQlyps-${VERSION_TAG}.apk \
-            release-artifacts/SHA256SUMS.txt \
-            --title "Proxo-Qlyps ${VERSION_TAG}" \
-            --generate-notes || true
+          if gh release view "$VERSION_TAG" >/dev/null 2>&1; then
+            gh release upload "$VERSION_TAG" release-artifacts/* --clobber
+          else
+            gh release create "${VERSION_TAG}" \
+              release-artifacts/* \
+              --title "Proxo-Qlyps ${VERSION_TAG}" \
+              --generate-notes
+          fi
