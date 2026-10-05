@@ -25,19 +25,35 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: current
 
-      - name: Prepare Keystore & Gradle Wrapper
+      - name: Ensure Gradle Wrapper & Keystore
         run: |
-          chmod +x ./gradlew
+          if [ ! -f "./gradlew" ]; then
+            echo "gradlew not found, generating wrapper..."
+            gradle wrapper
+          fi
+          chmod +x ./gradlew || true
           if [ -f "debug.keystore.base64" ] && [ ! -f "debug.keystore" ]; then
             base64 -d debug.keystore.base64 > debug.keystore
           fi
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --continue
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew testDebugUnitTest --continue
+          else
+            gradle testDebugUnitTest --continue
+          fi
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleRelease
+          else
+            gradle assembleRelease
+          fi
 
       - name: Prepare Release Artifacts
         run: |
